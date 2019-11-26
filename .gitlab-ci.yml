@@ -1,0 +1,13 @@
+.install_deps_template: &install_deps
+  image: python:3.6
+  before_script:
+    - pip install pipenv
+    - pipenv install
+
+test:
+  <<: *install_deps
+  stage: test
+  script:
+    - pipenv run python -m unittest
+  variables:
+    DJANGO_SETTINGS_MODULE: tests.settings
