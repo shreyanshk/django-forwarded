@@ -124,6 +124,12 @@ class TrustedList(TestCase):
         response = self.middleware(self.request)
         self.assertEqual(response.META['REMOTE_ADDR'], '172.16.21.42')
 
+    def test_untrusted_chain(self):
+        self.request.META['HTTP_FORWARDED'] = ('for="[2001::2]";by="[2001::1:1]";host=example.com;proto=https;proto-version="", '
+                                               'for="[2001::1:1]";by=192.168.1.1;host=example.com;proto=https;proto-version="", ')
+        response = self.middleware(self.request)
+        self.assertEqual(response.META['REMOTE_ADDR'], '2001::1:1')
+
     def test_valid_ipv4(self):
         self.request.META['HTTP_FORWARDED'] = 'for=192.168.12.10;by=192.168.1.1;host=example.com;proto=https;proto-version=""'
         response = self.middleware(self.request)
