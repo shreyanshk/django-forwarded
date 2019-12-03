@@ -18,13 +18,17 @@ class Depth1(TestCase):
 
     def test_empty(self):
         self.request.META['HTTP_FORWARDED'] = ''
-        response = self.middleware(self.request)
-        self.assertEqual(response.META['REMOTE_ADDR'], '127.0.0.1')
+        with self.assertLogs(level='WARN') as cm:
+            response = self.middleware(self.request)
+            self.assertEqual(response.META['REMOTE_ADDR'], '127.0.0.1')
+            self.assertEqual(cm.output, ["WARNING:django_forwarded:received fewer 'Forwarded' headers than expected (1) from 127.0.0.1; potential spoofing detected; received headers []"])
 
     def test_invalid(self):
         self.request.META['HTTP_FORWARDED'] = 'dfajsd, dsfsad,dsasf; ;4w8rr89347e;asfs;df; adsf;dasf;asdf'
-        response = self.middleware(self.request)
-        self.assertEqual(response.META['REMOTE_ADDR'], '127.0.0.1')
+        with self.assertLogs(level='WARN') as cm:
+            response = self.middleware(self.request)
+            self.assertEqual(response.META['REMOTE_ADDR'], '127.0.0.1')
+            self.assertEqual(cm.output, ["WARNING:django_forwarded:received fewer 'Forwarded' headers than expected (1) from 127.0.0.1; potential spoofing detected; received headers []"])
 
     def test_valid_ipv4(self):
         self.request.META['HTTP_FORWARDED'] = 'for=192.168.1.1;host=example.com;proto=https;proto-version=""'
@@ -55,8 +59,13 @@ class Depth2(TestCase):
 
     def test_single_proxy(self):
         self.request.META['HTTP_FORWARDED'] = 'for="[2001::1]";host=example.com;proto=https;proto-version=""'
-        response = self.middleware(self.request)
-        self.assertEqual(response.META['REMOTE_ADDR'], '2001::1')
+        with self.assertLogs(level='WARN') as cm:
+            response = self.middleware(self.request)
+            self.assertEqual(response.META['REMOTE_ADDR'], '2001::1')
+            self.assertEqual(
+                cm.output,
+                [("WARNING:django_forwarded:received fewer 'Forwarded' headers than expected (2) from 127.0.0.1; potential spoofing detected; received headers [{'for': '2001::1', 'host': 'example.com', 'proto': 'https', 'proto-version': '\"\"'}]")]
+            )
 
     def test_multiple_proxies(self):
         self.request.META['HTTP_FORWARDED'] = ('for="[2001::1]";host=example.com;proto=https;proto-version="", '

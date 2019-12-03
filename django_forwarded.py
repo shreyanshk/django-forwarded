@@ -19,8 +19,10 @@
 # granted to it by virtue of its status as an Intergovernmental Organization or
 # submit itself to any jurisdiction.
 
+import logging
 from django.conf import settings
 
+logger = logging.getLogger(__name__)
 
 class Forwarded:
     def __init__(self, get_response):
@@ -87,6 +89,8 @@ class Forwarded:
         return last_trusted_client_ip
 
     def _get_client_ip_by_trusted_depth(self, proxies, request_ip):
+        if len(proxies) < self.trusted_depth:
+            logger.warning(f"received fewer 'Forwarded' headers than expected ({self.trusted_depth}) from {request_ip}; potential spoofing detected; received headers {proxies}")
         trusted_proxies = proxies[-self.trusted_depth:] if len(proxies) > self.trusted_depth else proxies
         for proxy in trusted_proxies:
             if proxy.get('for', None):
