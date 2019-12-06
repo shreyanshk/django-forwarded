@@ -1,5 +1,7 @@
 # Django-Forwarded
 
+[![PyPi](https://img.shields.io/pypi/v/django-forwarded.svg)](https://pypi.org/project/Django-Forwarded/)
+
 Support HTTP "Forwarded" header in your Django applications.
 
 This middleware for [Django](https://www.djangoproject.com/) adds support for the `Forwarded` header which is standardized by Internet Engineering Task Force (IETF) in [RFC 7239](https://tools.ietf.org/html/rfc7239#section-5) and summarized in [Mozilla Developer Network (MDN) article](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded) of the same name. This header is used by many reverse HTTP proxies to pass client identification details (such as IPv4 or IPv6) to the backend application.

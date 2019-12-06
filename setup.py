@@ -15,7 +15,7 @@ setuptools.setup(
     description='Support HTTP "Forwarded" header in your Django applications',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url="https://gitlab.cern.ch/skhajanc/django-forwarded",
+    url="https://gitlab.cern.ch/ComputerSecurity/django-forwarded",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
