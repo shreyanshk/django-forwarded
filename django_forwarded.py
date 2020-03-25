@@ -24,6 +24,7 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+
 class Forwarded:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -34,10 +35,12 @@ class Forwarded:
             for trusted_proxy in trusted_list:
                 assert (type(trusted_proxy) == str), "invalid value in TRUSTED_PROXY_LIST. must be a string"
             self.trusted_list = trusted_list
+            self.get_validated_proxies = self._get_validated_proxies_by_trusted_list
             self.get_client_ip = self._get_client_ip_by_trusted_list
         elif trusted_depth is not None:
             assert ((type(trusted_depth) == int) and trusted_depth >= 1), "invalid value for TRUSTED_PROXY_DEPTH. must be >= 1"
             self.trusted_depth = trusted_depth
+            self.get_validated_proxies = self._get_validated_proxies_by_trusted_depth
             self.get_client_ip = self._get_client_ip_by_trusted_depth
         else:
             raise RuntimeError("invalid configuration, neither TRUSTED_PROXY_DEPTH nor TRUSTED_PROXY_LIST is defined in configuration")
@@ -49,7 +52,11 @@ class Forwarded:
             return self.get_response(request)
 
         parsed_header = self.parse_forwarded_header(forwarded_header)  # python lists are ordered
-        client_ip = self.get_client_ip(parsed_header, request.META['REMOTE_ADDR'])
+        validated_proxies = self.get_validated_proxies(parsed_header, request.META['REMOTE_ADDR'])
+        client_protocol = self.get_client_protocol(validated_proxies)
+        if client_protocol:
+            request._get_scheme = (lambda: client_protocol)
+        client_ip = self.get_client_ip(validated_proxies, request.META['REMOTE_ADDR'])
         request.META['REMOTE_ADDR'] = client_ip
         return self.get_response(request)
 
@@ -73,26 +80,42 @@ class Forwarded:
                 proxies.append(data)
         return proxies
 
-    def _get_client_ip_by_trusted_list(self, proxies, request_ip):
+    def _get_validated_proxies_by_trusted_list(self, proxies, request_ip):
         reversed_proxy_list = reversed(list(proxies))
         last_trusted_client_ip = request_ip
+        valid_proxies = list()
         for proxy in reversed_proxy_list:
             try:
                 proxy_addr = proxy['by']
                 client_addr = proxy['for']
                 if last_trusted_client_ip == proxy_addr and proxy_addr in self.trusted_list:
                     last_trusted_client_ip = client_addr
+                    valid_proxies.insert(0, proxy)
                 else:
-                    return last_trusted_client_ip
+                    return valid_proxies
             except KeyError:
-                return last_trusted_client_ip
-        return last_trusted_client_ip
+                return valid_proxies
+        return valid_proxies
 
-    def _get_client_ip_by_trusted_depth(self, proxies, request_ip):
+    def _get_client_ip_by_trusted_list(self, validated_proxies, request_ip):
+        if len(validated_proxies) > 0:
+            return validated_proxies[0]['for']
+        else:
+            return request_ip
+
+    def _get_validated_proxies_by_trusted_depth(self, proxies, request_ip):
         if len(proxies) < self.trusted_depth:
             logger.warning(f"received fewer 'Forwarded' headers than expected ({self.trusted_depth}) from {request_ip}; potential spoofing detected; received headers {proxies}")
         trusted_proxies = proxies[-self.trusted_depth:] if len(proxies) > self.trusted_depth else proxies
-        for proxy in trusted_proxies:
+        return trusted_proxies
+
+    def _get_client_ip_by_trusted_depth(self, validated_proxies, request_ip):
+        for proxy in validated_proxies:
             if proxy.get('for', None):
                 return proxy['for']
         return request_ip  # everything failed! so return remote address from request
+
+    def get_client_protocol(self, validated_proxies):
+        for proxy in validated_proxies:
+            if proxy.get("proto", None):
+                return proxy["proto"]
