@@ -1,0 +1,5 @@
+recursive-exclude tests *
+exclude MANIFEST.in
+exclude README.md
+exclude setup.cfg
+exclude setup.py
