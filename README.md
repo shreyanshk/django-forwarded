@@ -74,6 +74,6 @@ To execute the included test suit, run the following commands in a terminal:
 
 ```shell
 $ cd <path to the django-forwarded>
-$ pipenv shell  # opens a shell in dev environment
+$ pip install -r requirements.txt
 $ DJANGO_SETTINGS_MODULE=tests.settings python3 -m unittest  # run the tests
 ```
