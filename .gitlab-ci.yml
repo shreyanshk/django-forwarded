@@ -8,5 +8,6 @@ test:
   stage: test
   script:
     - python -m unittest
+    - python setup.py sdist bdist_wheel
   variables:
     DJANGO_SETTINGS_MODULE: tests.settings
