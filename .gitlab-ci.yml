@@ -3,11 +3,38 @@
   before_script:
     - pip install -r requirements.txt
 
+stages:
+  - test
+  - package
+  - upload
+
 test:
   <<: *install_deps
   stage: test
   script:
     - python -m unittest
-    - python setup.py sdist bdist_wheel
   variables:
     DJANGO_SETTINGS_MODULE: tests.settings
+
+package:
+  image: python:3.6
+  stage: package
+  before_script:
+    - git fetch --tags #Workaround for https://gitlab.com/gitlab-org/gitaly/issues/2221
+  script:
+    - python setup.py sdist bdist_wheel
+  artifacts:
+    paths:
+      - dist/*
+
+upload:
+  image: python:3.6
+  stage: upload
+  before_script:
+    - pip install twine
+  script:
+    - twine upload dist/*
+  variables:
+    TWINE_USERNAME: $TWINE_USERNAME
+    TWINE_PASSWORD: $TWINE_PASSWORD
+    TWINE_REPOSITORY: $TWINE_REPOSITORY

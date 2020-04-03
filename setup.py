@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 try:
-    version = subprocess.check_output(["git", "describe", "--tags"]).decode()[:-1]
+    version = subprocess.check_output(["git", "describe", "--always", "--tags", "--dirty"]).decode()[:-1]
 except subprocess.CalledProcessError:
     version = "unknown"
 
