@@ -4,7 +4,10 @@ import subprocess
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-version = subprocess.check_output(["git", "describe", "--tags"]).decode()[:-1]
+try:
+    version = subprocess.check_output(["git", "describe", "--always", "--tags", "--dirty"]).decode()[:-1]
+except subprocess.CalledProcessError:
+    version = "unknown"
 
 setuptools.setup(
     name="Django-Forwarded",
@@ -30,5 +33,5 @@ setuptools.setup(
     install_requires=["django>=2.2", ],
     zip_safe=False,
     py_modules=['django_forwarded', ],
-    platform='any',
+    platforms='any',
 )
