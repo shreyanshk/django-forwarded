@@ -57,7 +57,7 @@ Just specify the number of trusted proxies with the `TRUSTED_PROXY_DEPTH` variab
 TRUSTED_PROXY_DEPTH = 2  # trusts maximum of 2 proxies
 ```
 
-**Note: It is not secure as secure as specifying a list.**
+**Note: It is not as secure as specifying a list.**
 
 ### Access client IP
 
